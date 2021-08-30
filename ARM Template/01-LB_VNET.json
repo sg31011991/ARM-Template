@@ -1,0 +1,182 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+
+           "projectName": {
+            "type": "string",
+            "metadata": {
+                "description": "Specifies a project name that is used for generating resource names."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Specifies the location for all of the resources created by this template."
+            }
+        }
+   
+        
+
+    },
+    "functions": [],
+    "variables": {
+        "lbName": "[concat(parameters('projectName'),'-lb')]",
+        "lbSkuName": "Standard",
+        "lbPublicIpAddressName": "[concat(parameters('projectName'),'-lbPublicIP')]",
+       
+        "lbFrontEndName": "LoadBalancerFrontEnd",
+   
+        "lbBackendPoolName": "LoadBalancerBackEndPool",
+
+        "lbProbeName": "loadBalancerHealthProbe",
+        "nsgName": "[concat(parameters('projectName'),'-nsg')]",
+        "vNetName": "[concat(parameters('projectName'),'-vnet')]",
+        "vNetAddressPrefix": "10.0.0.0/16",
+        "vNetSubnetName": "BackendSubnet",
+        "vNetSubnetAddressPrefix": "10.0.0.0/24"
+        
+    },
+    "resources": [
+     
+         {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2020-06-01",
+            "location": "[parameters('location')]",
+            "name": "[concat(variables('vNetName'), '/' ,variables('vNetSubnetName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vNetName'))]"
+            ],
+            "properties": {
+                "addressPrefix": "[variables('vNetSubnetAddressPrefix')]"
+            }
+        },
+
+
+  {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('vNetName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('vNetAddressPrefix')]"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/loadBalancers",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('lbName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[variables('lbSkuName')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIpAddressName'))]"
+           
+            ],
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "[variables('lbFrontEndName')]",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('lbPublicIpAddressName'))]"
+                            }
+                        }
+                    }
+                    
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "[variables('lbBackendPoolName')]"
+                       
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "myHTTPRule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', variables('lbName'), variables('lbFrontEndName'))]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('lbName'), variables('lbBackendPoolName'))]"
+                            },
+                            "frontendPort": 80,
+                            "backendPort": 80,
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 15,
+                            "protocol": "Tcp",
+                            "enableTcpReset": true,
+                            "loadDistribution": "Default",
+                            "disableOutboundSnat": true,
+                            "probe": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/probes', variables('lbName'), variables('lbProbeName'))]"
+                            }
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "[variables('lbProbeName')]",
+                        "properties": {
+                            "protocol": "Http",
+                            "port": 80,
+                            "requestPath": "/",
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 2
+                        }
+                    }
+                ]
+                
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('lbPublicIPAddressName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[variables('lbSkuName')]"
+            },
+            "properties": {
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('nsgName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "AllowHTTPInbound",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "Internet",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        }
+      
+
+
+
+    ],
+    "outputs": {}
+}

@@ -1,0 +1,19 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+                "keyVaultName": {
+            "value": "demokv2310"
+        },
+
+        "objectId": {
+            "value": "a0ff7bed-65a3-4146-abdd-b41249f4bb53"
+        },
+        "identityId": {
+            "value": "/subscriptions/533d386a-5ae6-4aa2-a60b-9d586b866f82/resourcegroups/Demo-RG-ARM/providers/Microsoft.ManagedIdentity/userAssignedIdentities/demo-MI"
+        }
+
+
+
+    }
+}

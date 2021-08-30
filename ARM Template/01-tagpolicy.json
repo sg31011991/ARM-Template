@@ -1,0 +1,45 @@
+{
+  "properties": {
+    "displayName": "Add or replace a tag on resource groups",
+    "policyType": "BuiltIn",
+    "mode": "All",
+    "description": "Adds or replaces the specified tag and value when any resource group is created or updated. Existing resource groups can be remediated by triggering a remediation task.",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Tags"
+    },
+    "parameters": {},
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Resources/subscriptions/resourceGroups"
+          },
+          {
+            "field": "[tags]",
+            "notEquals": ""
+          }
+        ]
+      },
+      "then": {
+        "effect": "modify",
+        "details": {
+          "roleDefinitionIds": [
+            "/providers/Microsoft.Authorization/policyDefinitions/0015ea4d-51ff-4ce3-8d8c-f3f8f0179a56"
+          ],
+          "operations": [
+            {
+              "operation": "addOrReplace",
+              "field": "[tags]",
+              "value": "[resourceGroup().tags]"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "id": "/providers/Microsoft.Authorization/policyDefinitions/0015ea4d-51ff-4ce3-8d8c-f3f8f0179a56",
+  "type": "Microsoft.Authorization/policyDefinitions",
+  "name": "0015ea4d-51ff-4ce3-8d8c-f3f8f0179a56"
+}

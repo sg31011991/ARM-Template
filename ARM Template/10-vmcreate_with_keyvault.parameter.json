@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminUsername": {
+      "value": "Administrator1"
+    },
+    "adminPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/533d386a-5ae6-4aa2-a60b-9d586b866f82/resourceGroups/Demo-RG-ARM/providers/Microsoft.KeyVault/vaults/armkeyvaultaksdemo"
+        },
+        "secretName": "AzureVMPassword"
+      }
+    }
+  }
+}

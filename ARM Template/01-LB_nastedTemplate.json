@@ -1,0 +1,70 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "loadBalancers_name": {
+            "defaultValue": "lambdalb",
+            "type": "string"
+        },
+        "publicIPAddresses_name": {
+            "defaultValue": "lambdaip",
+            "type": "string"
+        }
+    },
+    "variables": {
+    },
+    "resources": [
+        {
+            "apiVersion": "2019-05-01",
+            "name": "linkedTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "https://raw.githubusercontent.com/sam-cogan/arm-masterclass/master/Episode%2010%20-%20Nested%20Templates/1_simple_nested/IPAddress.json",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "publicIPAddresses_name": {
+                        "value": "[parameters('publicIPAddresses_name')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/loadBalancers",
+            "name": "[parameters('loadBalancers_name')]",
+            "apiVersion": "2017-06-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "LoadBalancerFrontEnd",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[reference('linkedTemplate').outputs.resourceID.value]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                ],
+                "loadBalancingRules": [
+                ],
+                "probes": [
+                ],
+                "inboundNatRules": [
+                ],
+                "outboundNatRules": [
+                ],
+                "inboundNatPools": [
+                ]
+            },
+            "dependsOn": [
+                "linkedTemplate"
+            ]
+        }
+
+    ]
+}

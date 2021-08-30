@@ -1,0 +1,40 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+         "soragecount": {
+             "type": "array",
+             "defaultValue": [
+               "demo",
+               "demo1"
+
+             ]
+
+         }
+
+
+    },
+    "functions": [],
+    "variables": {},
+    "resources": [
+       {
+         "type": "Microsoft.Storage/storageAccounts",
+         "apiVersion": "2021-04-01",
+         "name": "[concat('stg', uniqueString(resourceGroup().id), parameters('soragecount')[copyIndex('storagecopy')])]",
+         "location": "[resourceGroup().location]",
+         "kind": "StorageV2",
+         "sku": {
+            "name": "Standard_LRS"
+         },
+
+         "copy": {
+
+             "name": "storagecopy",
+             "count": "[length(parameters('soragecount'))]"
+         }
+       
+       }
+
+    ],
+    "outputs": {}
+}

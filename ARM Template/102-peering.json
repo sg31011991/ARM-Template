@@ -1,0 +1,41 @@
+{
+     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+     "contentVersion": "1.0.0.0",
+     "parameters": {
+     },
+     "variables": {
+     },
+ "resources": [
+         {
+         "apiVersion": "2020-04-01",
+         "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+         "name": "Network-Vnet/NetworkToprod",
+         "location": "[resourceGroup().location]",
+         "properties": {
+         "allowVirtualNetworkAccess": true,
+         "allowForwardedTraffic": true,
+         "allowGatewayTransit": false,
+         "useRemoteGateways": false,
+             "remoteVirtualNetwork": {
+             "id": "/subscriptions/533d386a-5ae6-4aa2-a60b-9d586b866f82/resourceGroups/Demo-RG-ARM/providers/Microsoft.Network/virtualNetworks/Prod-Vnet"
+             }
+         }
+         },
+          {
+         "apiVersion": "2020-04-01",
+         "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+         "name": "Prod-Vne/prodTonetwork",
+         "location": "[resourceGroup().location]",
+         "properties": {
+         "allowVirtualNetworkAccess": true,
+         "allowForwardedTraffic": true,
+         "allowGatewayTransit": false,
+         "useRemoteGateways": false,
+             "remoteVirtualNetwork": {
+             "id": "/subscriptions/533d386a-5ae6-4aa2-a60b-9d586b866f82/resourceGroups/Demo-RG-ARM-Network/providers/Microsoft.Network/virtualNetworks/Network-Vnet"
+             }
+         }
+         }
+     ]
+}
+

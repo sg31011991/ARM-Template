@@ -1,0 +1,227 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "projectName": {
+            "type": "string",
+            "metadata": {
+                "description": "Specifies a project name that is used for generating resource names."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Specifies the location for all of the resources created by this template."
+            }
+        },
+        "adminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "Specifies the virtual machine administrator username."
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Specifies the virtual machine administrator password."
+            }
+        },
+        "vmSize": {
+            "type": "string",
+            "defaultValue": "Standard_D2s_v3",
+            "metadata": {
+                "description": "Size of the virtual machine"
+            }
+        },
+        "vmcount": {
+             "type": "int"
+
+        }
+    },
+    "variables": {
+        
+        "lbSkuName": "Standard",
+        "lbPublicIpAddressName": "[concat(parameters('projectName'),'-lbPublicIP')]",
+      
+
+        "nsgName": "[concat(parameters('projectName'),'-nsg')]",
+        "vNetName": "[concat(parameters('projectName'),'-vnet')]",
+        "vNetAddressPrefix": "10.0.0.0/16",
+        "vNetSubnetName": "BackendSubnet",
+        "vNetSubnetAddressPrefix": "10.0.0.0/24",
+
+        "vmStorageAccountType": "Premium_LRS"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-06-01",
+            "name": "[concat(parameters('projectName'),'-vm', copyIndex(1), '-networkInterface')]",
+            "location": "[parameters('location')]",
+            "copy": {
+                "name": "networkInterfaceCopy",
+                "count": "[parameters('vmcount')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vNetName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vNetName'), variables('vNetSubnetName'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+                 
+               
+                
+                
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vNetName'), variables('vNetSubnetName'))]"
+                                
+                            }
+                            
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+                }
+            }
+        },
+        
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2020-06-01",
+            "name": "[concat(parameters('projectName'),'-vm', copyIndex(1))]",
+            "location": "[parameters('location')]",
+            "zones": [
+                "[copyIndex(1)]"
+            ],
+            "copy": {
+                "name": "vmCopy",
+                "count": "[parameters('vmcount')]"
+            },
+            "dependsOn": [
+                "networkInterfaceCopy"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2016-Datacenter",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "fromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('vmStorageAccountType')]"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('projectName'),'-vm', copyIndex(1), '-networkInterface'))]"
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('projectName'),'-vm', copyIndex(1))]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "enableAutomaticUpdates": true,
+                        "provisionVmAgent": true
+                    }
+                }
+            }
+        },
+     
+        {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2020-06-01",
+            "location": "[parameters('location')]",
+            "name": "[concat(variables('vNetName'), '/' ,variables('vNetSubnetName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vNetName'))]"
+            ],
+            "properties": {
+                "addressPrefix": "[variables('vNetSubnetAddressPrefix')]"
+            }
+        },
+        
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('lbPublicIPAddressName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[variables('lbSkuName')]"
+            },
+            "properties": {
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Static"
+                
+               
+            }
+        },
+        
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('nsgName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                    "name": "winrm",
+                    "properties": {
+                        "protocol": "Tcp",
+                        "sourcePortRange": "*",
+                        "destinationPortRange": "5985-5986",
+                        "sourceAddressPrefix": "*",
+                        "destinationAddressPrefix": "*",
+                        "access": "Allow",
+                        "priority": 110,
+                        "direction": "Inbound"
+                    }
+                    },
+                    {
+                    "name": "rdp",
+                    "properties": {
+                        "protocol": "Tcp",
+                        "sourcePortRange": "*",
+                        "destinationPortRange": "3389",
+                        "sourceAddressPrefix": "*",
+                        "destinationAddressPrefix": "*",
+                        "access": "Allow",
+                        "priority": 120,
+                        "direction": "Inbound"
+                    }
+                    }
+
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('vNetName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('vNetAddressPrefix')]"
+                    ]
+                }
+            }
+        }
+    ]
+}
