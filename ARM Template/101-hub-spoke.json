@@ -1,0 +1,110 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "functions": [],
+    "variables": {
+        "spokeVnetName": "SpokevNet",
+        "spokeVnetId": "[concat('/subscriptions/', variables('spokeSubscriptionId'), '/resourceGroups/', variables('spokeVnetResourceGroupName'), '/providers/Microsoft.Network/virtualNetworks/', variables('spokeVnetName'))]",
+        "location": "[resourceGroup().location]",
+        "spokeSubscriptionId": "533d386a-5ae6-4aa2-a60b-9d586b866f82",
+        "spokeVnetResourceGroupName": "Demo-RG-ARM-1",
+        "HubVnetName": "hub-net",
+        "HubVnetId": "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeVnetName'))]"
+    },
+    "resources": [
+
+
+         {
+        "apiVersion": "2016-03-30",
+        "type": "Microsoft.Network/virtualNetworks",
+        "name": "[variables('spokeVnetName')]",
+        "location": "[variables('location')]",
+        "comments": "This is the first vNet",
+        "properties": {
+            "addressSpace": {
+                "addressPrefixes": [
+                    "10.238.70.0/24"
+                ]
+            },
+            "subnets": [
+                {
+                    "name": "SpokeSubNet",
+                    "properties": {
+                        "addressPrefix": "10.238.70.0/27"
+                    }
+                }
+            ]
+        }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-05-01",
+      "name": "[concat(variables('HubVnetName'), '/peerToHub')]",
+      "dependsOn": [
+         
+      ],
+      "properties": {
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": false,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteVirtualNetwork": {
+          "id": "[variables('spokeVnetId')]"
+        }
+
+      }
+  },
+  {
+        "apiVersion": "2017-05-10",
+        "name": "nestedTemplate",
+        "type": "Microsoft.Resources/deployments",
+        "resourceGroup": "[variables('spokeVnetResourceGroupName')]",
+        "subscriptionId": "[variables('spokeSubscriptionId')]",
+        
+        "properties": {
+            "mode": "Incremental",
+            "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "parameters": {},
+                "variables": {},
+                "resources": [
+                    {
+                        "apiVersion": "2020-05-01",
+                        "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                        "name": "[concat(variables('spokeVnetName'), concat('/peerTo-', variables('HubVnetName')))]",
+                        "location": "[resourceGroup().location]",
+                       
+                        "properties": {
+                          "allowVirtualNetworkAccess": true,
+                          "allowForwardedTraffic": false,
+                          "allowGatewayTransit": false,
+                          "useRemoteGateways": false,
+                          "remoteVirtualNetwork": {
+
+                            "id": "[variables('HubVnetId')]"
+                          }
+
+
+
+                        }
+                    
+                        
+                    }
+                ]
+            
+            }
+            }
+
+            }
+
+
+    ],
+    "outputs": {
+        "NewVnetResourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/virtualNetworks',variables('HubVnetName'),variables('spokeVnetName'))]"
+        }
+    }
+}

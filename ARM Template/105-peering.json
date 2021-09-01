@@ -1,0 +1,86 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "functions": [],
+    "variables": {
+        "spokeVnetName": "SpokevNet",
+        "spokeVnetId": "[concat('/subscriptions/', variables('spokeSubscriptionId'), '/resourceGroups/', variables('spokeVnetResourceGroupName'), '/providers/Microsoft.Network/virtualNetworks/', variables('spokeVnetName'))]",
+        "location": "[resourceGroup().location]",
+        "spokeSubscriptionId": "533d386a-5ae6-4aa2-a60b-9d586b866f82",
+        "spokeVnetResourceGroupName": "Demo-RG-ARM-1",
+        "HubSubscriptionId": "533d386a-5ae6-4aa2-a60b-9d586b866f82",
+        "HubVnetName": "hub-net",
+        "HubVnetResourceGroupName": "Demo-RG-ARM",
+        "HubVnetId":  "[concat('/subscriptions/', variables('HubSubscriptionId'), '/resourceGroups/', variables('HubVnetResourceGroupName'), '/providers/Microsoft.Network/virtualNetworks/', variables('HubVnetName'))]"
+    },
+    "resources": [
+
+        
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-05-01",
+      "name": "[concat(variables('HubVnetName'), '/peerToHub')]",
+      "dependsOn": [
+         
+      ],
+      "properties": {
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": false,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteVirtualNetwork": {
+          "id": "[variables('spokeVnetId')]"
+        }
+
+      }
+  },
+  {
+        "apiVersion": "2017-05-10",
+        "name": "nestedTemplate",
+        "type": "Microsoft.Resources/deployments",
+        "resourceGroup": "[variables('spokeVnetResourceGroupName')]",
+        "subscriptionId": "[variables('spokeSubscriptionId')]",
+        
+        "properties": {
+            "mode": "Incremental",
+            "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "parameters": {},
+                "variables": {},
+                "resources": [
+                    {
+                        "apiVersion": "2020-05-01",
+                        "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                        "name": "[concat(variables('spokeVnetName'), concat('/peerTo-', variables('HubVnetName')))]",
+                        "location": "[resourceGroup().location]",
+                       
+                        "properties": {
+                          "allowVirtualNetworkAccess": true,
+                          "allowForwardedTraffic": false,
+                          "allowGatewayTransit": false,
+                          "useRemoteGateways": false,
+                          "remoteVirtualNetwork": {
+
+                            "id": "[variables('HubVnetId')]"
+                          }
+
+
+
+                        }
+                    
+                        
+                    }
+                ]
+            
+            }
+            }
+
+            }
+
+
+    ],
+    "outputs": {
+       }
+}

@@ -1,0 +1,43 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "functions": [],
+    "variables": {
+        "spokeVnetName": "SpokevNet"
+
+
+    },
+    "resources": [
+
+        
+         {
+        "apiVersion": "2016-03-30",
+        "type": "Microsoft.Network/virtualNetworks",
+        "name": "[variables('spokeVnetName')]",
+        "location": "[resourceGroup().location]",
+        "comments": "This is the first vNet",
+        "properties": {
+            "addressSpace": {
+                "addressPrefixes": [
+                    "10.238.70.0/24"
+                ]
+            },
+            "subnets": [
+                {
+                    "name": "SpokeSubNet",
+                    "properties": {
+                        "addressPrefix": "10.238.70.0/27"
+                    }
+                }
+            ]
+        }
+    }
+    ],
+    "outputs": {
+        "NewVnetResourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/virtualNetworks',variables('spokeVnetName'))]"
+        }
+    }
+}

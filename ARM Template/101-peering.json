@@ -1,0 +1,67 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "functions": [],
+    "variables": {},
+    "resources": [
+ 
+  {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-05-01",
+      "name": "hub-net/h2s",
+      "properties": {
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": false,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteVirtualNetwork": {
+          "id": "/subscriptions/533d386a-5ae6-4aa2-a60b-9d586b866f82/resourceGroups/Demo-RG-ARM-1/providers/Microsoft.Network/virtualNetworks/SpokevNet"
+        }
+
+      }
+  },
+  {
+        "apiVersion": "2017-05-10",
+        "name": "nestedTemplate",
+        "type": "Microsoft.Resources/deployments",
+        "resourceGroup": "Demo-RG-ARM-1",
+        "properties": {
+            "mode": "Incremental",
+            "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "parameters": {},
+                "variables": {},
+                "resources": [
+                    {
+                        "apiVersion": "2020-05-01",
+                        "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                        "name": "SpokevNet/spoketoHubPeering",
+                        "location": "[resourceGroup().location]",
+                       
+                        "properties": {
+                          "allowVirtualNetworkAccess": true,
+                          "allowForwardedTraffic": false,
+                          "allowGatewayTransit": false,
+                          "useRemoteGateways": false,
+                          "remoteVirtualNetwork": {
+
+                            "id": "/subscriptions/533d386a-5ae6-4aa2-a60b-9d586b866f82/resourceGroups/Demo-RG-ARM/providers/Microsoft.Network/virtualNetworks/hub-net"
+                          }
+
+
+
+                        }
+                    
+                        
+                    }
+                ]
+            
+            }
+            }
+
+            }
+    ],
+    "outputs": {}
+}
