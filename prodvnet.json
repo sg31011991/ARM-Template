@@ -1,0 +1,77 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vNetSettings": {
+      "type": "object",
+      "defaultValue": {
+        "name": "Prod-Vnet",
+        "location": "eastus",
+        "addressPrefixes": [
+          {
+            "name": "DemoAddressSpace",
+            "addressPrefix": "10.0.0.0/21"
+          }
+        ],
+        "subnets": [
+          {
+            "name": "APP",
+            "addressPrefix": "10.0.0.0/24"
+          },
+          {
+            "name": "DB",
+            "addressPrefix": "10.0.1.0/24"
+          },
+          {
+            "name": "WEB",
+            "addressPrefix": "10.0.2.0/24"
+          }
+        ]
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-06-01",
+      "name": "[parameters('vNetSettings').name]",
+      "location": "[parameters('vNetSettings').location]",
+      "tags": "[resourceGroup().tags]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vNetSettings').addressPrefixes[0].addressPrefix]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('vNetSettings').subnets[0].name]",
+            "properties": {
+              "addressPrefix": "[parameters('vNetSettings').subnets[0].addressPrefix]"
+            }
+          },
+          {
+            "name": "[parameters('vNetSettings').subnets[1].name]",
+            "properties": {
+              "addressPrefix": "[parameters('vNetSettings').subnets[1].addressPrefix]"
+            }
+          },
+          {
+            "name": "[parameters('vNetSettings').subnets[2].name]",
+            "properties": {
+                "addressPrefix": "[parameters('vNetSettings').subnets[2].addressPrefix]"
+
+            }
+          }
+        ]
+      }
+    }
+  ],
+      "outputs": {
+        "Vnet": {
+            "type": "object",
+            "value": "[resourceId('Microsoft.Network/virtualNetworks',parameters('vNetSettings'))]"
+        }
+    }
+
+}
